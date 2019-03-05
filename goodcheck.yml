@@ -1,0 +1,574 @@
+rules:
+# Base(パターンマッチさせやすくする為のルールです)
+- id: com.example.base.1
+  pattern:
+    regexp: (\S==\S|\S=\S)
+  message:
+    ==や=の前後には半角空白を入れてください。
+  glob:
+    - "**/*.java"
+  fail:
+    foo==bar
+  pass:
+    foo == bar
+# Compare
+- id: com.example.compare.1
+  pattern:
+    equals("")
+  message:
+    文字列が空かを調べる際はnullの可能性がある為、
+    StringUtils#isEmptyを推奨します。
+  glob:
+    - "**/*.java"
+  fail:
+    foo.equals("")
+  pass:
+    StringUtils.isEmpty(foo)
+- id: com.example.compare.2
+  pattern:
+    regexp: .* == ".*"
+  message:
+    Stringはequalsで比較してください。
+  glob:
+    - "**/*.java"
+  fail:
+    foo == "bar"
+  pass:
+    foo.equals("bar")
+- id: com.example.compare.3
+  pattern:
+    size() == 0
+  message:
+    Collectionが空かを調べる際はnullの可能性があるため、
+    CollectionUtils#isEmptyを推奨します。
+  glob:
+    - "**/*.java"
+  fail:
+    foo.size() == 0
+  pass:
+    CollectionUtils.isEmpty(foo)
+- id: com.example.compare.4
+  pattern:
+    StringUtils.isAlphanumeric
+  message:
+    文字列が英数字かを調べる際は半角カナ等の誤検知があるので、
+    CharUtils#isAsciiAlphanumericを推奨します。
+  glob:
+    - "**/*.java"
+  fail:
+    StringUtils.isAlphanumeric("foo123")
+  pass:
+    CharUtils.isAsciiAlphanumeric("foo123")
+- id: com.example.compare.5
+  pattern:
+    StringUtils.isAlpha
+  message:
+    文字列が英数字かを調べる際は半角カナ等の誤検知があるので、
+    CharUtils#isAsciiAlphaを推奨します。
+  glob:
+    - "**/*.java"
+  fail:
+    StringUtils.isAlpha("foo")
+  pass:
+    CharUtils.isAsciiAlpha("foo")
+# Avoid null
+- id: com.example.null.1
+  pattern:
+    - Double
+    - Long
+  message:
+    プリミティブのラッパークラスのインスタンスは推奨されていません。
+  glob:
+    - "**/*.java"
+  fail:
+    - Double foo
+    - Long foo
+  pass:
+    - double foo
+    - long foo
+- id: com.example.null.2
+  pattern:
+    return null
+  message:
+    Optionalの利用を推奨します。
+  justification:
+    Java7以前では利用できないので対象外です。
+  glob:
+    - "**/*.java"
+  fail:
+    return null
+  pass:
+    return Optional.empty()
+- id: com.example.null.3
+  pattern:
+    = null;
+  message:
+    nullでの初期化は必要ありません。
+  glob:
+    - "**/*.java"
+  fail:
+    String foo = null;
+  pass:
+    String foo;
+# immutable
+- id: com.example.immutable.1
+  pattern:
+    regexp: static [A-Z0-9]+
+  message:
+    定数の宣言にはイミュータブルにする為にfinal修飾子を付けてください。
+  glob:
+    - "**/*.java"
+  fail:
+    public static FOO;
+  pass:
+    public static final FOO;
+- id: com.example.immutable.2
+  pattern:
+    regexp: ^Date\s
+  message:
+    イミュータブルにする為にDateTimeAPIの利用を推奨します。
+  justification:
+    Java7以前では利用できないので対象外です。
+  glob:
+    - "**/*.java"
+  fail:
+    Date dateNow = new Date();
+  pass:
+    ZonedDateTime dateNow = ZonedDateTime.now();
+- id: com.example.immutable.3
+  pattern:
+    regexp: ^DateFormat\s
+  message:
+    イミュータブルにする為にDateTimeFormatterの利用を推奨します。
+  justification:
+    Java7以前では利用できないので対象外です。
+  glob:
+    - "**/*.java"
+  fail:
+    DateFormat dateTimeFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+  pass:
+    DateTimeFormatter dateTimeFormat = DateTimeFormatter.ofPattern("yyyy/MM/dd HH:mm:ss");
+- id: com.example.immutable.4
+  pattern:
+    public static final String[]
+  message:
+    配列をイミュータブルにするには
+    Collections.unmodifiableList(Arrays.asList("One", "Two", "Three", "Four"));
+    の様にしてください。
+  glob:
+    - "**/*.java"
+  fail:
+    public static final String[] NUM_LIST = {"One", "Two", "Three", "Four"};
+  pass:
+    public static final List<String> NUM_LIST = Collections.unmodifiableList(Arrays.asList("One", "Two", "Three", "Four"));
+- id: com.example.effective.1
+  pattern:
+    regexp: .* \+ .*
+  message:
+    文字列の連結にはString#joinが利用可能です。
+  glob:
+    - "**/*.java"
+  fail:
+    String joined = foo + "," + bar;
+  pass:
+    String[] strList = {foo, bar};
+    String joined = String.join(",", strList);
+- id: com.example.effective.2
+  pattern:
+    regexp: .* \+ .*
+  message:
+    変数を使った文字列の生成にはString#formatが利用可能です。
+  glob:
+    - "**/*.java"
+  fail:
+    String message = "a=" + a + ",b=" + b + ",c=" + c;
+  pass:
+    String message = String.format("a=%d, b=%d, c=%d", a, b, c);
+- id: com.example.effective.3
+  pattern:
+    new ArrayList
+  message:
+    Lists.newArrayListの利用が可能です。
+  justification:
+    Google Guava を利用している場合のみです。
+  glob:
+    - "**/*.java"
+  fail:
+    new ArrayList
+  pass:
+    Lists.newArrayList
+- id: com.example.effective.4
+  pattern:
+    new HashMap
+  message:
+    Maps.newHashMapの利用が可能です。
+  justification:
+    Google Guava を利用している場合のみです。
+  glob:
+    - "**/*.java"
+  fail:
+    new HashMap
+  pass:
+    Maps.newHashMap
+- id: com.example.effective.5
+  pattern:
+    new HashSet
+  message:
+    Sets.newHashSetの利用が可能です。
+  justification:
+    Google Guava を利用している場合のみです。
+  glob:
+    - "**/*.java"
+  fail:
+    new HashSet
+  pass:
+    Sets.newHashSet
+- id: com.example.effective.6
+  pattern:
+    regexp: ArrayList.* =
+  message:
+    ArrayList<>は利用する実装が変わる可能性がある為、
+    Listインターフェースで宣言することを推奨します。
+  glob:
+    - "**/*.java"
+  fail:
+    ArrayList<String> foo = Lists.newArrayList();
+  pass:
+    List<String> foo = Lists.newArrayList();
+- id: com.example.effective.7
+  pattern:
+    regexp: HashMap.* =
+  message:
+    HashMap<>は利用する実装が変わる可能性がある為、
+    Mapインターフェースで宣言することを推奨します。
+  glob:
+    - "**/*.java"
+  fail:
+    HashMap<String, String> foo = Lists.newHashMap();
+  pass:
+    Map<String, String> foo = Lists.newHashMap();
+- id: com.example.effective.8
+  pattern:
+    regexp: HashSet.* =
+  message:
+    HashSet<>は利用する実装が変わる可能性がある為、
+    Setインターフェースで宣言することを推奨します。
+  glob:
+    - "**/*.java"
+  fail:
+    HashSet<String> foo = Sets.newHashSet();
+  pass:
+    Set<String> foo = Sets.newHashSet();
+- id: com.example.effective.9
+  pattern:
+    private static Logger
+  message:
+    Loggerはイミュータブルにする為に、finalで宣言することを推奨します。
+  glob:
+    - "**/*.java"
+  fail:
+    private static Logger logger = Logger.getLogger(this.getClass());
+  pass:
+    private static final Logger logger = Logger.getLogger(this.getClass());
+- id: com.example.effective.10
+  pattern:
+    regexp: void .*\(\)
+  message:
+    引数なしvoidのメソッドは必要がない可能性があります。
+  glob:
+    - "**/*.java"
+- id: com.example.memory.1
+  pattern:
+    Files.readAllLines
+  message:
+    Files#readAllLinesはメモリを圧迫する可能性があります。
+  justification:
+    ファイルのサイズが大きくない場合は問題ありません。
+  glob:
+    - "**/*.java"
+  fail:
+    Files.readAllLines
+- id: com.example.memory.2
+  pattern:
+    .deleteOnExit();
+  message:
+    deleteOnExitはメモリを圧迫する可能性があります。
+  glob:
+    - "**/*.java"
+  fail:
+    .deleteOnExit();
+- id: com.example..memory.3
+  pattern:
+    java.util.zip
+  message:
+    java.util.zipはメモリを圧迫する可能性があります。
+  glob:
+    - "**/*.java"
+  fail:
+    java.util.zip
+- id: com.example.legacy.1
+  pattern:
+    .close()
+  message:
+    close漏れを無くす為に、try-with-resourceの利用が可能であれば推奨します。
+  justification:
+    Java6以前では利用できないので対象外です。
+  glob:
+    - "**/*.java"
+  fail:
+    try {
+      FileInputStream in = new FileInputStream(inFilePath);
+    } finally {
+      in.close();
+    }
+  pass:
+    try (FileInputStream in = new FileInputStream(inFilePath);) {
+    }
+- id: com.example.legacy.2
+  pattern:
+    Iterator
+  message:
+    拡張for文の利用を推奨します。
+  justification:
+    Java4以前では利用できないので対象外です。
+  glob:
+    - "**/*.java"
+  fail:
+    Iterator iterator = list.iterator();
+    while (iterator.hasNext()) {}
+  pass:
+    for (int i = 0; i < list.size(); i++) {}
+- id: com.example.legacy.3
+  pattern:
+    regexp: for.\(.*keySet\(\)\)
+  message:
+    Mapをfor文で回すには、entrySet()の利用が可能です。
+  glob:
+    - "**/*.java"
+  fail:
+    "for (String key : map.keySet())"
+  pass:
+    "for (Map.Entry<String, String> entry : map.entrySet())"
+- id: com.example.legacy.4
+  pattern:
+    new InputStreamReader
+  message:
+    Files#newBufferedReaderの利用がOracleより推奨されています。
+  justification:
+    Java6以前では利用できないので対象外です。
+  glob:
+    - "**/*.java"
+  fail:
+    new BufferedReader(new InputStreamReader(new FileInputStream(fileName), encode));
+  pass:
+    Files.newBufferedReader(path)
+- id: com.example.legacy.5
+  pattern:
+    new OutputStreamWriter
+  message:
+    Files#newBufferedWriterの利用がOracleより推奨されています。
+  justification:
+    Java6以前では利用できないので対象外です。
+  glob:
+    - "**/*.java"
+  fail:
+    new BufferedWriter(new OutputStreamWriter(new FileOutputStream(fileName), encode));
+  pass:
+    Files.newBufferedWriter(path);
+- id: com.example.file.1
+  pattern:
+    regexp: new File\(".*"\);
+  message:
+    Pathsの利用がOracleより推奨されています。
+  justification:
+    Java6以前では利用できないので対象外です。
+  glob:
+    - "**/*.java"
+  fail:
+    File file = new File("dir/file.txt");
+  pass:
+    Path path = Paths.get("dir/file.txt");
+- id: com.example.file.2
+  pattern:
+    .getAbsolutePath();
+  message:
+    path.toAbsolutePath().toString()の利用がOracleより推奨されています。
+  justification:
+    Java6以前では利用できないので対象外です。
+  glob:
+    - "**/*.java"
+  fail:
+    file.getAbsolutePath();
+  pass:
+    path.toAbsolutePath().toString();
+- id: com.example.file.3
+  pattern:
+    .exists()
+  message:
+    Files#existsの利用がOracleより推奨されています。
+  justification:
+    Java6以前では利用できないので対象外です。
+  glob:
+    - "**/*.java"
+  fail:
+    file.exists();
+  pass:
+    Files.exists(path);
+- id: com.example.file.4
+  pattern:
+    .canRead()
+  message:
+    Files#isReadableの利用がOracleより推奨されています。
+  justification:
+    Java6以前では利用できないので対象外です。
+  glob:
+    - "**/*.java"
+  fail:
+    file.canRead()
+  pass:
+    Files.isReadable(path)
+- id: com.example.file.5
+  pattern:
+    .mkdirs();
+  message:
+    Files#createDirectoriesの利用がOracleより推奨されています。
+  justification:
+    Java6以前では利用できないので対象外です。
+  glob:
+    - "**/*.java"
+  fail:
+    new File("dir").mkdirs();
+  pass:
+    Files.createDirectories(path);
+- id: com.example.file.6
+  pattern:
+    .isDirectory()
+  message:
+    Files#isDirectoryの利用がOracleより推奨されています。
+  justification:
+    Java6以前では利用できないので対象外です。
+  glob:
+    - "**/*.java"
+  fail:
+    file.isDirectory()
+  pass:
+    Files.isDirectory(path)
+- id: com.example.file.7
+  pattern:
+    regexp: \.renameTo\(.*\)
+  message:
+    Files#moveの利用がOracleより推奨されています。
+  justification:
+    Java6以前では利用できないので対象外です。
+  glob:
+    - "**/*.java"
+  fail:
+    file.renameTo(dest);
+  pass:
+    Files.move(path, destPath);
+- id: com.example.file.8
+  pattern:
+    regexp: File\(.*\)\.delete\(\);
+  message:
+    Files#deleteIfExistsの利用がOracleより推奨されています。
+  justification:
+    Java6以前では利用できないので対象外です。
+  glob:
+    - "**/*.java"
+  fail:
+    new File("file.txt").delete();
+  pass:
+    Files.deleteIfExists(Paths.get("file.txt"));
+- id: com.example.name.1
+  pattern:
+    regexp: .*Flg
+  message:
+    booleanの変数名は命題にすべきです。ex. isReadable, isCreated
+  glob:
+    - "**/*.java"
+  fail:
+    readFlg
+  pass:
+    isReadable
+- id: com.example.exception.1
+  pattern:
+    regexp: throws.*Exception.*Exception.{
+  message:
+    複数例外を投げる場合はそのメソッドでの例外処理を検討してください。
+  glob:
+    - "**/*.java"
+  fail:
+    throws FooException, BarException {
+  pass:
+    throws ThisException {
+- id: com.example.exception.2
+  pattern:
+    regexp: catch.*\(.*Exception.*\).*\{\s*\}
+  message:
+    例外が処理されていません。
+  glob:
+    - "**/*.java"
+  fail:
+    catch(FooException e) {
+    }
+  pass:
+    catch(FooExceptoin) {
+      logger.log("FooException happen");
+    }
+- id: com.example.exception.3
+  pattern:
+    regexp: catch.*\(.*NullPointerException
+  message:
+    NullPointerExceptionを発生させない設計を検討してください。
+  glob:
+    - "**/*.java"
+  fail:
+    - catch(NullPointerException e)
+- id: com.example.exception.4
+  pattern:
+    regexp: catch.*\(\s*Exception
+  message:
+    Exceptionは個別に処理することを推奨します。
+  glob:
+    - "**/*.java"
+  fail:
+    catch(Exception e)
+  pass:
+    catch(IOException e)
+- id: com.example.type.1
+  pattern:
+    - return 0
+    - return 1
+  message:
+    booleanの利用を検討してください。
+  glob:
+    - "**/*.java"
+  fail:
+    - return 0
+    - return 1
+  pass:
+    - return true;
+    - return false;
+- id: com.example.type.2
+  pattern:
+    regexp: if.*\(.* == "[A-Z0-9]+".*\)
+  message:
+    Enumの利用を検討してください。
+  glob:
+    - "**/*.java"
+  fail:
+    if (foo == "FOO1")
+  pass:
+    if (foo == FOO1)
+- id: com.example.spell.1
+  pattern:
+    regexp: regist[A-Z].*\(.*\)
+  message:
+    registerが正しい単語です。
+  glob:
+    - "**/*.java"
+  fail:
+    registFoo()
+  pass:
+    registerFoo()
+
